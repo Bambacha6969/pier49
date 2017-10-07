@@ -1,4 +1,6 @@
 package com.android_examples.generateqrcode_android_examplescom;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
@@ -15,39 +17,27 @@ import com.google.zxing.common.BitMatrix;
 
 public class MainActivity extends AppCompatActivity {
 
+    SharedPreferences sharedpreferences;
     ImageView imageView;
-    Button button;
-    EditText editText;
-    String EditTextValue ;
-    Thread thread ;
+
     public final static int QRcodeWidth = 500 ;
     Bitmap bitmap ;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        sharedpreferences = getSharedPreferences(LoginActivity.MyPREFERENCES, Context.MODE_PRIVATE);
+        imageView = (ImageView) findViewById(R.id.imageView);
 
-        imageView = (ImageView)findViewById(R.id.imageView);
-        editText = (EditText)findViewById(R.id.editText);
-        button = (Button)findViewById(R.id.button);
+        String nonce = sharedpreferences.getString("nonce", null);
+        try {
+            bitmap = TextToImageEncode(nonce);
 
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+            imageView.setImageBitmap(bitmap);
 
-                EditTextValue = editText.getText().toString();
-
-                try {
-                    bitmap = TextToImageEncode(EditTextValue);
-
-                    imageView.setImageBitmap(bitmap);
-
-                } catch (WriterException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        });
+        } catch (WriterException e) {
+            e.printStackTrace();
+        }
     }
 
 

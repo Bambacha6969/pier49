@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.annotation.NonNull;
@@ -79,6 +80,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         setContentView(R.layout.activity_login);
         sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
         // Set up the login form.
+
+        if (sharedpreferences.contains("nonce")) {
+
+            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+            startActivity(intent);
+        }
+
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
         populateAutoComplete();
 
@@ -326,8 +334,13 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
 
             if (person != null) {
                 SharedPreferences.Editor editor = sharedpreferences.edit();
+
                 editor.putString("nonce", person.getNonce());
                 editor.commit();
+                SharedPreferences saver = getSharedPreferences("nonce", Context.MODE_PRIVATE);
+
+                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                startActivity(intent);
 
                 //sharedpreferences.contains()
                 // TODO Save nonce to file, then show QR code activity
