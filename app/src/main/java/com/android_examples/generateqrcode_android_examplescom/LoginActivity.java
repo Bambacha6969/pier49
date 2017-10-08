@@ -47,7 +47,9 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      */
     public static final String API_BASE_URL = "https://app-test.ohf-lesvos.org/api";
 
-    public static final String API_LOCATION_GET_TOKEN = "/recyclingPoints/getToken";
+    public static final String API_LOCATION_REGISTER = "/v1/person/register";
+
+    public static final String API_LOCATION_GET_TOKEN = "/v1/person/getToken";
 
     /**
      * Preference storage identifier
