@@ -6,9 +6,6 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.app.LoaderManager.LoaderCallbacks;
 import java.util.Map;
@@ -40,36 +37,39 @@ import java.util.List;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
-
-import static android.Manifest.permission.READ_CONTACTS;
-
 /**
  * A login screen that offers login via email/password.
  */
 public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<Cursor> {
 
     /**
-     * Id to identity READ_CONTACTS permission request.
+     * Base URL of the API
      */
-    private static final int REQUEST_READ_CONTACTS = 0;
-    SharedPreferences sharedpreferences;
-    public static final String MyPREFERENCES = "MyPrefs" ;
+    public static final String API_BASE_URL = "https://app-test.ohf-lesvos.org/api";
 
+    public static final String API_LOCATION_GET_TOKEN = "/recyclingPoints/getToken";
 
     /**
-     * A dummy authentication store containing known user names and passwords.
-     * TODO: remove after connecting to a real authentication system.
+     * Preference storage identifier
      */
-    private static final String[] DUMMY_CREDENTIALS = new String[]{
-            "foo@example.com:hello", "bar@example.com:world"
-    };
+    public static final String MyPREFERENCES = "MyPrefs" ;
+
+    public static final String SHARED_PREFS_KEY_USER_ID = "user_id";
+
+    public static final String SHARED_PREFS_KEY_NONCE = "nonce";
+
+    /**
+     * Shared preferences
+     */
+    private SharedPreferences sharedpreferences;
+
     /**
      * Keep track of the login task to ensure we can cancel it if requested.
      */
     private UserLoginTask mAuthTask = null;
 
     // UI references.
-    private AutoCompleteTextView mEmailView;
+    private AutoCompleteTextView mUserIdView;
     private EditText mPasswordView;
     private View mProgressView;
     private View mLoginFormView;
@@ -77,19 +77,18 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_login);
         sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
-        // Set up the login form.
 
-        if (sharedpreferences.contains("nonce")) {
-
+        if (sharedpreferences.contains(SHARED_PREFS_KEY_NONCE)) {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
+            return;
         }
 
-        mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
-        populateAutoComplete();
+        setContentView(R.layout.activity_login);
 
+        // Set up the login form.
+        mUserIdView = (AutoCompleteTextView) findViewById(R.id.email);
         mPasswordView = (EditText) findViewById(R.id.password);
         mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
@@ -114,51 +113,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         mProgressView = findViewById(R.id.login_progress);
     }
 
-    private void populateAutoComplete() {
-        if (!mayRequestContacts()) {
-            return;
-        }
-
-        getLoaderManager().initLoader(0, null, this);
-    }
-
-    private boolean mayRequestContacts() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            return true;
-        }
-        if (checkSelfPermission(READ_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
-            return true;
-        }
-        if (shouldShowRequestPermissionRationale(READ_CONTACTS)) {
-            Snackbar.make(mEmailView, R.string.permission_rationale, Snackbar.LENGTH_INDEFINITE)
-                    .setAction(android.R.string.ok, new View.OnClickListener() {
-                        @Override
-                        @TargetApi(Build.VERSION_CODES.M)
-                        public void onClick(View v) {
-                            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
-                        }
-                    });
-        } else {
-            requestPermissions(new String[]{READ_CONTACTS}, REQUEST_READ_CONTACTS);
-        }
-        return false;
-    }
-
-    /**
-     * Callback received when a permissions request has been completed.
-     */
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        if (requestCode == REQUEST_READ_CONTACTS) {
-            if (grantResults.length == 1 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                populateAutoComplete();
-            }
-        }
-    }
-
-
-    /**
+     /**
      * Attempts to sign in or register the account specified by the login form.
      * If there are form errors (invalid email, missing fields, etc.), the
      * errors are presented and no actual login attempt is made.
@@ -169,11 +124,11 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         }
 
         // Reset errors.
-        mEmailView.setError(null);
+        mUserIdView.setError(null);
         mPasswordView.setError(null);
 
         // Store values at the time of the login attempt.
-        String email = mEmailView.getText().toString();
+        String email = mUserIdView.getText().toString();
         String password = mPasswordView.getText().toString();
 
         boolean cancel = false;
@@ -186,8 +141,8 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
             cancel = true;
         }
         else if (TextUtils.isEmpty(email)) {
-            mEmailView.setError(getString(R.string.error_field_required));
-            focusView = mEmailView;
+            mUserIdView.setError(getString(R.string.error_field_required));
+            focusView = mUserIdView;
             cancel = true;
         }
 
@@ -280,7 +235,7 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
                 new ArrayAdapter<>(LoginActivity.this,
                         android.R.layout.simple_dropdown_item_1line, emailAddressCollection);
 
-        mEmailView.setAdapter(adapter);
+        mUserIdView.setAdapter(adapter);
     }
 
 
@@ -298,60 +253,52 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
      * Represents an asynchronous login/registration task used to authenticate
      * the user.
      */
-    public class UserLoginTask extends AsyncTask<Void, Void, Person> {
+    public class UserLoginTask extends AsyncTask<Void, Void, GetPersonNonceResponse> {
 
-        private final String mEmail;
+        private final String mUserId;
         private final String mPassword;
 
-        UserLoginTask(String email, String password) {
-            mEmail = email;
+        UserLoginTask(String userId, String password) {
+            mUserId = userId;
             mPassword = password;
         }
 
         @Override
-        protected Person doInBackground(Void... params) {
-
+        protected GetPersonNonceResponse doInBackground(Void... params) {
             try {
-                PersonRequest pr = new PersonRequest(mEmail , mPassword);
-                final String url = "https://app-test.ohf-lesvos.org/api/recyclingPoints/getToken";
+                AuthenticatePersonRequest pr = new AuthenticatePersonRequest(mUserId, mPassword);
+                final String url = API_BASE_URL + API_LOCATION_GET_TOKEN;
                 RestTemplate restTemplate = new RestTemplate();
                 Map<String, String> vars = new HashMap<String, String>();
                 restTemplate.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
-                Person greeting = restTemplate.postForObject(url,pr, Person.class,vars );
-                return greeting;
+                return restTemplate.postForObject(url,pr, GetPersonNonceResponse.class,vars );
             } catch (Exception e) {
                 Log.e("MainActivity", e.getMessage(), e);
             }
-
             return null;
-
         }
 
         @Override
-        protected void onPostExecute(final Person person) {
+        protected void onPostExecute(final GetPersonNonceResponse person) {
             mAuthTask = null;
             showProgress(false);
 
             if (person != null) {
-                SharedPreferences.Editor editor = sharedpreferences.edit();
 
-                editor.putString("nonce", person.getNonce());
+                SharedPreferences.Editor editor = sharedpreferences.edit();
+                editor.putString(SHARED_PREFS_KEY_NONCE, person.getNonce());
+                editor.putString(SHARED_PREFS_KEY_USER_ID, mUserId);
                 editor.commit();
-                SharedPreferences saver = getSharedPreferences("nonce", Context.MODE_PRIVATE);
 
                 Intent intent = new Intent(LoginActivity.this, MainActivity.class);
                 startActivity(intent);
+                finish();
 
-                //sharedpreferences.contains()
-                // TODO Save nonce to file, then show QR code activity
-
-               // finish();
             } else {
                 mPasswordView.setError(getString(R.string.error_incorrect_password));
                 mPasswordView.requestFocus();
             }
         }
-
 
         @Override
         protected void onCancelled() {

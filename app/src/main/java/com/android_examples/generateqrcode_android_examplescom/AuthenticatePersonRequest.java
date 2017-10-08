@@ -3,9 +3,9 @@ package com.android_examples.generateqrcode_android_examplescom;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Created by oxfam20 on 07/10/2017.
+ * Used to authenticate a person against the API
  */
-public class PersonRequest {
+public class AuthenticatePersonRequest {
 
     @JsonProperty("case_no")
     String caseNo;
@@ -28,7 +28,7 @@ public class PersonRequest {
         this.password = password;
     }
 
-    PersonRequest(String caseNo, String password) {
+    AuthenticatePersonRequest(String caseNo, String password) {
         this.caseNo = caseNo;
         this.password = password;
     }
