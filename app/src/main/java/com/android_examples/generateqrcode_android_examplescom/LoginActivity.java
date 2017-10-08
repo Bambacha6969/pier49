@@ -79,9 +79,10 @@ public class LoginActivity extends AppCompatActivity implements LoaderCallbacks<
         super.onCreate(savedInstanceState);
         sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
 
-        if (sharedpreferences.contains(SHARED_PREFS_KEY_NONCE)) {
+        if (sharedpreferences.contains(SHARED_PREFS_KEY_NONCE) && sharedpreferences.contains(SHARED_PREFS_KEY_USER_ID)) {
             Intent intent = new Intent(LoginActivity.this, MainActivity.class);
             startActivity(intent);
+            finish();
             return;
         }
 
